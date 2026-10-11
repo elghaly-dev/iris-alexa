@@ -91,10 +91,10 @@ describe("/sim page", () => {
   it("holds to talk with the Web Speech API and routes the words", () => {
     assert.match(PAGE, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
     assert.match(PAGE, /rec\.lang = "en-US"/);
-    assert.match(PAGE, /import \{ route \} from "\/sim\/route\.js"/);
+    assert.match(PAGE, /import \{ route, followUp \} from "\/sim\/route\.js"/);
     assert.match(PAGE, /id="mic" hidden/);
     assert.match(PAGE, /mic\.hidden = true/);
-    assert.match(PAGE, /const call = route\(text\)/);
+    assert.match(PAGE, /: route\(text\);/);
     assert.match(PAGE, /callTool\(call\.name, call\.arguments, true\)/);
     assert.match(PAGE, /speechSynthesis\.speak\(new SpeechSynthesisUtterance/);
   });

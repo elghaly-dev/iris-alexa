@@ -24,7 +24,7 @@ type ToolResult = {
 /**
  * Every tool returns the same card shape: `refused` always, and a one-sentence `summary` to
  * speak whenever there is an answer. The rest of the fields depend on the tool, so the schema
- * is loose. A host can show the card and speak only the summary; older hosts read the same
+ * is loose. A host can show the card and speak just the summary; older hosts read the same
  * JSON from the text block.
  */
 export const CARD_OUTPUT = z.looseObject({

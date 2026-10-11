@@ -122,3 +122,28 @@ export function route(utterance) {
   if (target) return { name: "clean_up_steps", arguments: { target } };
   return { name: "check_scam", arguments: { situation: text } };
 }
+
+const REPEAT = /^(?:please\s+)?(?:say (?:that|it) again|repeat(?: that)?|come again|what did you say)[.!?]*$/i;
+const STOP = /^(?:stop|cancel|quiet|that'?s all|that is all|never ?mind)[.!]*$/i;
+const WHAT_NOW = /^(?:ok(?:ay)?[,\s]+)?(?:so\s+)?(?:what now|now what|what next|what should i do(?: now)?|what do i do(?: now)?)[.!?]*$/i;
+
+/**
+ * A short follow-up to the previous answer, or null when the utterance is a new question.
+ * Whole-utterance matches, so a forwarded message that contains "stop" is still checked.
+ * "what now?" maps to the clean-up steps that fit the last answer: the same device after a
+ * clean-up answer, otherwise the wallet checklist.
+ * @param {string} utterance
+ * @param {{ tool: ToolName, target?: string, spoken: string } | null} last
+ * @returns {{ kind: "repeat" } | { kind: "stop" } | { kind: "call", call: ToolCall } | null}
+ */
+export function followUp(utterance, last) {
+  const text = String(utterance ?? "").trim();
+  if (STOP.test(text)) return { kind: "stop" };
+  if (!last) return null;
+  if (REPEAT.test(text)) return { kind: "repeat" };
+  if (WHAT_NOW.test(text)) {
+    const target = last.tool === "clean_up_steps" && last.target ? last.target : "wallet";
+    return { kind: "call", call: { name: "clean_up_steps", arguments: { target } } };
+  }
+  return null;
+}
