@@ -23,7 +23,7 @@ The server stores nothing. It does not log tool arguments. It holds no private k
 | `safety_tip` | Optional `topic` | One short reminder written to be spoken aloud. Topics: `general`, `seed_phrase`, `links`, `approvals`, `support`, `qr_codes`. |
 | `clean_up_steps` | `target`: `iphone`, `android`, or `wallet` | A checklist you do yourself on that device. |
 
-`check_link` and `safety_tip` were ported from [Alarm2024/iris-alexa-guard](https://github.com/Alarm2024/iris-alexa-guard).
+`check_link` and `safety_tip` were ported from an earlier private prototype of ours.
 
 AI-assisted analysis of public pages.
 
