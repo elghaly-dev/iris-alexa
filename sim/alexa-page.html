@@ -73,8 +73,11 @@
     }
     const result = reply.result || {};
     const first = result.content && result.content[0] ? result.content[0].text : "";
-    let payload = null;
-    try { payload = JSON.parse(first); } catch { payload = null; }
+    // Prefer the structured card; fall back to the JSON text block for older servers.
+    let payload = result.structuredContent && typeof result.structuredContent === "object" ? result.structuredContent : null;
+    if (!payload) {
+      try { payload = JSON.parse(first); } catch { payload = null; }
+    }
     if (result.isError) {
       const message =
         (payload && payload.message) ||

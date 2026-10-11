@@ -29,6 +29,12 @@ function toolReply(payload: unknown, isError = false): unknown {
 }
 
 describe("/sim page", () => {
+  it("reads the structured card when the reply has one", () => {
+    const { renderReply } = renderBlock();
+    const reply = { jsonrpc: "2.0", id: 1, result: { content: [], structuredContent: { refused: false, summary: "That is an official domain." }, isError: false } };
+    assert.deepEqual(renderReply(reply), { error: false, text: "That is an official domain." });
+  });
+
   const { renderReply } = renderBlock();
 
   it("shows a tool error as an error, never as a verdict", () => {
