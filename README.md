@@ -92,6 +92,8 @@ Listens on `127.0.0.1:$PORT` by default (port `3000`); set `HOST=0.0.0.0` to acc
 | `http://127.0.0.1:3000/mcp` | Streamable HTTP MCP |
 | `http://127.0.0.1:3000/health` | Status. No user data. |
 | `http://127.0.0.1:3000/sim` | Simulated assistant page (`sim/alexa-page.html`) |
+| `http://127.0.0.1:3000/privacy` | Privacy page (`pages/privacy.html`): what the server receives and keeps (nothing) |
+| `http://127.0.0.1:3000/terms` | Terms page (`pages/terms.html`): safety information, not advice; MIT, no warranty |
 
 ### What `/mcp` enforces
 

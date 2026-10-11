@@ -13,6 +13,12 @@ const SIM_DIR = join(dirname(fileURLToPath(import.meta.url)), "../sim");
 const SIM_PAGE = readFileSync(join(SIM_DIR, "alexa-page.html"), "utf8");
 /** Deterministic utterance router. The sim page imports this same file. */
 const SIM_ROUTE_JS = readFileSync(join(SIM_DIR, "route.js"), "utf8");
+/** Plain privacy and terms pages, for a public deploy and the Devpost form. */
+const PAGES_DIR = join(dirname(fileURLToPath(import.meta.url)), "../pages");
+export const STATIC_PAGES: Record<string, string> = {
+  "/privacy": readFileSync(join(PAGES_DIR, "privacy.html"), "utf8"),
+  "/terms": readFileSync(join(PAGES_DIR, "terms.html"), "utf8"),
+};
 export const MCP_SPEC = "2025-11-25";
 /** Hard cap on a request body. Tool inputs are short strings; anything bigger is refused. */
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -277,6 +283,11 @@ export function startServer(options: { host?: string; port?: number; env?: NodeJ
     if (req.method === "GET" && path === SIM_PATH) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
       res.end(SIM_PAGE);
+      return;
+    }
+    if (req.method === "GET" && Object.hasOwn(STATIC_PAGES, path)) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600" });
+      res.end(STATIC_PAGES[path]);
       return;
     }
     if (path !== MCP_PATH) {
