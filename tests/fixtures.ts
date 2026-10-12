@@ -57,7 +57,8 @@ export const CURSOR_WRITTEN: ScamLine[] = [
 
 /**
  * SCAM rows 1-9 (Instinct) plus rows 10-18 (real SEAL + synthetic).
- * Real count for the PR table = 15 (1-9, three SEAL rows, three screenshot-verified DMs). Dapptoolkit = known miss.
+ * Real count for the PR table = 15 (1-9, three SEAL rows, three DMs quoted from public web pages:
+ * Know Your Crook on paragraph.com, r/cardano, r/CryptoCurrency; each row cites its page). Dapptoolkit = known miss.
  */
 export const SCAM: ScamLine[] = [
   {
@@ -250,7 +251,8 @@ export const BYPASS: ScamLine[] = [
  */
 export const CONTEXT: string[] = [];
 // The Atomic ("Systems are down...") and SlowMist ("You signed a phishing signature") lines are
-// kept out on purpose: they need sender context. The three screenshot-verified DMs are in SCAM.
+// kept out on purpose: they need sender context. The three DMs quoted from public web pages are
+// in SCAM, each with its source link.
 
 export interface LinkLine {
   url: string;
