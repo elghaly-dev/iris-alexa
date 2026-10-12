@@ -3,18 +3,18 @@
 Amazon Developer Hackathon, Alexa+ track. Deadline: Oct 23.
 Repo: https://github.com/elghaly-dev/iris-alexa (MIT)
 
+**Simulation (read this first):** We did not test on a retail Alexa+ device. The voice experience is shown on a **simulated Alexa+ page at `/sim` — not a real Alexa device** (no Amazon or Alexa logos or sounds). The page and server source are in this public repo so judges can run the same calls locally.
+
 ---
 
 ## Project name
 Iris for Alexa+
 
 ## Tagline
-Ask Alexa+ whether a crypto message is a scam. Iris checks the words, the link or the Solana transaction. It's read-only and never touches your wallet.
+Ask whether a crypto message is a scam. Iris checks the words, the link, or a public Solana transaction. Read-only. It never touches your wallet.
 
 ## Inspiration
-Iris began as a free page at iris-35.elghaly.dev. It's for the moment a message asks for your seed phrase, or something left your wallet and you don't know what you signed. That page runs in the browser and sends nothing to us.
-
-The same question often comes up away from a screen: "Is this real? Should I click it?" A voice assistant is the natural place to ask. So we moved Iris's checks behind an MCP server that an Alexa+ host can call, and wrote every answer to be read aloud.
+People often get a DM or link when they are away from a desk: “Is this real?” Iris started as a browser page that sends nothing to us. For Alexa+, the same checks sit behind a self-hosted MCP server, with every answer written to be spoken aloud.
 
 ## What it does
 Iris is a self-hosted, read-only MCP server with five tools:
@@ -37,67 +37,59 @@ A clean result says "This is not a clearance."
 ## How we built it
 - **Server:** TypeScript on Node 22, using the official MCP TypeScript SDK (`@modelcontextprotocol/server` and `@modelcontextprotocol/node`) over Streamable HTTP, spec 2025-11-25. Zod schemas for every tool input.
 - **Decoder:** the transaction decoder is the same one the Iris web page uses (`sol-decode.js`).
-- **`/mcp` endpoint, hardened:**
-  - Host and Origin checks;
-  - 405 for GET and DELETE;
-  - 406 unless Accept lists both `application/json` and `text/event-stream`;
-  - 400 for an unknown `MCP-Protocol-Version`;
-  - 415 for a non-JSON body, 413 over 64 KB;
-  - 202 for `notifications/initialized`;
-  - every error body is fixed text.
-- **Privacy:** the server stores nothing and doesn't log tool arguments. It serves its own privacy and terms pages at `/privacy` and `/terms`.
-- **Structured results:** every tool declares an `outputSchema` and returns `structuredContent` (refused, a spoken `summary`, the verdict and the tool's fields) next to the same JSON as text.
-- **Testing:** we had no Alexa+ host to test on. We tested with MCP Inspector in CLI mode, plus a simulated assistant page at `/sim`. That page sends the same JSON-RPC calls a host sends, shows the text an assistant would say, and can speak it through the browser's speech API. Hold to talk uses the browser Web Speech API. A deterministic router (`sim/route.js`, no model) picks the tool.
-- **Voice `/sim`:** hold to talk, then one `tools/call`. The router checks a URL or domain, then an 87- or 88-character base58 signature, then "tip" / "remind me", then "clean up" / "I got hacked" with a phone or a wallet, and otherwise `check_scam`. A seed phrase is not blocked on the page. The server refuses it.
-- **Tests:** 276, all passing, plus `npm run conformance` (13 Streamable HTTP rules against a running server). They cover real and synthetic scam lines, normal lines, refusals, bypass attempts, reported and official domains, every row of the `/mcp` table, and the utterance router.
+- **`/mcp` endpoint, hardened:** Host and Origin checks; 405 for GET and DELETE; 406 unless Accept lists both `application/json` and `text/event-stream`; 400 for an unknown `MCP-Protocol-Version`; 415 for a non-JSON body, 413 over 64 KB; 202 for `notifications/initialized`; every error body is fixed text.
+- **Privacy:** the server stores no tool inputs and does not log them. Error logs may record only the error kind. Privacy and terms are served at `/privacy` and `/terms`.
+- **Structured results:** every tool declares an `outputSchema` and returns `structuredContent` next to the same JSON as text.
+- **Simulated host:** `/sim` posts the same JSON-RPC a host sends, shows the spoken `summary`, optional browser speech, hold-to-talk via Web Speech API, and a deterministic router (`sim/route.js`, no model).
+- **Tests:** 276 unit tests plus `npm run conformance` (13 Streamable HTTP rules against a running server).
 
-## What we built during the hackathon window (Aug 31 – Oct 23)
+## What changed since Aug 31, 2026
 
-- **MCP server (new Sep 12).** Self-hosted, read-only Streamable HTTP. The first commit in this repo is 12 Sep 2026. Spec 2025-11-25.
-- **Five tools.** `explain_transaction`, `check_scam`, `check_link`, `safety_tip`, `clean_up_steps`.
-- **Hardened `/mcp`.** Host and Origin checks, 405 on GET and DELETE, 406 unless Accept lists both `application/json` and `text/event-stream`, 400 for an unknown `MCP-Protocol-Version`, 415 for a non-JSON body, 413 over 64 KB, 202 for `notifications/initialized`, and error bodies of fixed text.
-- **Voice `/sim`.** Hold to talk on the simulated page, through the browser Web Speech API (`en-US`). The router maps the utterance to one tool. The page posts that `tools/call` to `/mcp`, shows the result, and speaks the `summary`. The page is a stand-in for an MCP host. No Amazon or Alexa logos or sounds.
-- **Spoken follow-ups (Oct 11).** "What now?" gives the clean-up steps that fit the last answer, "say that again" repeats it, and "stop" ends. Whole-utterance matches, so a forwarded scam that says "stop" is still checked.
-- **Structured results and a conformance check (Oct 11).** `outputSchema` and `structuredContent` on all five tools; `npm run conformance` checks 13 Streamable HTTP rules and exits non-zero on a failure.
-- **Privacy and terms pages (Oct 11).** Served by the server at `/privacy` and `/terms`.
+| When | What |
+|------|------|
+| Sep 12 | New repo: self-hosted Streamable HTTP MCP server (spec 2025-11-25), five read-only tools. |
+| Sep–Oct | Hardened `/mcp` (Host, Origin, Accept, protocol version, size limits, fixed error bodies). |
+| Oct 11 | Privacy and terms pages; `outputSchema` / `structuredContent` on all tools; `npm run conformance`; spoken follow-ups on `/sim` (“what now?”, “say that again”, “stop”). |
+| Oct 12 | Devpost pack: simulation wording on `/sim`, privacy/terms contact and effective dates, demo video script; fixture README example uses a lookalike domain. |
 
 ## Challenges we ran into
-- **Two kinds of error.** A tool can fail (`isError: true` inside a normal result), or the request can fail (a JSON-RPC error). Our own test page first showed a tool error as an ordinary answer. We fixed the page and added a test, so a host-style client shows both kinds as errors.
-- **Answers arrive as an event stream.** Streamable HTTP can send a tool result as `event:`/`data:` frames instead of one JSON body. Our test page had to parse both.
-- **Strict headers.** A request whose Accept header lacks either `application/json` or `text/event-stream` is refused, so a quick `curl` test needs both. We made the 406 text say exactly that.
-- **Writing for the ear.** JSON is easy to check and hard to listen to. We added a one-sentence `summary` to every result, and made the safety tips short enough to say in one breath.
-- **The same words can be a scam or a warning.** "Never share your seed phrase" is advice. The same line followed by "reply with your 24 words here" is a scam. The rules run on the whole text, and the seed-phrase refusal runs first.
+- **Two kinds of error.** A tool can fail inside a normal result, or the request can fail as JSON-RPC. The sim page had to show both as errors, not as a “no pattern” verdict.
+- **Answers arrive as an event stream.** Streamable HTTP can send tool results as SSE frames; clients must parse both shapes.
+- **Writing for the ear.** We added a one-sentence `summary` to every result and kept safety tips short enough to say in one breath.
 
 ## Accomplishments that we're proud of
-- Nothing in the code can sign, send, connect or approve, because there is no code path for it.
-- A pasted seed phrase is refused before any rule reads it. It is never sent to the RPC, never stored and never logged.
-- Every error body is fixed text, so nothing a caller sends is echoed back.
-- 276 tests and 13 conformance rules pass, and a banned-word check runs on the README, source, tests and sim page.
+- No code path can sign, send, connect or approve.
+- A pasted seed phrase is refused before any rule reads it; it is not sent to the RPC, stored, or logged.
+- 276 tests and 13 conformance rules pass, plus a banned-word check on README, source, tests, and sim.
 
 ## What we learned
-- Streamable HTTP is small but exact: the Accept header, the status codes, `202` for notifications, and the protocol-version header all matter. A host and a server that disagree fail quietly.
-- For a voice host, the spoken sentence matters as much as the data behind it.
-- A clean result has to say plainly that it isn't a clearance. Silence would be read as "safe".
+- Streamable HTTP is small but exact: Accept, status codes, `202` for notifications, and protocol version all matter.
+- For voice, the spoken sentence matters as much as the data behind it.
+- A clean result must say plainly that it isn't a clearance.
 
 ## What's next for Iris
-- Connect to a real Alexa+ host and test by voice.
-- Rules in more languages. Today other languages get `no_known_pattern`, which is not a clearance.
-- A wider reported-host list and more patterns from real messages people send us.
+- Connect to a real Alexa+ host and test by voice when access is available.
+- Rules in more languages (today other languages may get `no_known_pattern`, which is not a clearance).
 
 ## Built with
-TypeScript, Node.js, Model Context Protocol (Streamable HTTP), Zod, tsx, Solana JSON-RPC, Render (optional self-hosting)
+TypeScript, Node.js, Model Context Protocol (Streamable HTTP), Zod, tsx, Solana JSON-RPC, optional self-hosting (no AWS required for the demo)
 
-## Try it
+## Try it (local, no billing)
 ```bash
 git clone https://github.com/elghaly-dev/iris-alexa.git
 cd iris-alexa && npm install && npm start
-# MCP:       http://127.0.0.1:3000/mcp
-# Test page: http://127.0.0.1:3000/sim
-# Privacy:   http://127.0.0.1:3000/privacy   Terms: http://127.0.0.1:3000/terms
-npm run conformance   # in a second terminal
+# Simulated Alexa+ page (not a real device): http://127.0.0.1:3000/sim
+# MCP endpoint:                         http://127.0.0.1:3000/mcp
+# Privacy / terms:                      http://127.0.0.1:3000/privacy  and  /terms
 ```
 
-Hosted copy: SERVER_URL (replace with the Render URL after deploying `render.yaml`; then `/mcp`, `/sim`, `/privacy` and `/terms` are under it).
+In a second terminal, with the server running:
+```bash
+npm run conformance
+npm test
+```
+
+You can also point MCP Inspector at `http://127.0.0.1:3000/mcp` (Streamable HTTP, spec 2025-11-25).
 
 ## Note for judges
-Tested with MCP Inspector and a simulated page, not on a real Alexa+ device. The simulated page has no Amazon or Alexa logos or sounds. Iris gives no financial, legal or medical advice, stores no personal data and takes no payments.
+This submission is a **simulated Alexa+ experience** with source included. Tested with MCP Inspector and `/sim`, not on a retail Alexa+ device. Iris gives no financial, legal or medical advice, stores no personal data, and takes no payments. Builder: **Wyndham Heaven**, brand **elghaly**.
