@@ -11,3 +11,13 @@ export interface ToolCall {
 }
 
 export function route(utterance: string): ToolCall;
+
+export interface LastAnswer {
+  tool: ToolName;
+  target?: string;
+  spoken: string;
+}
+
+export type FollowUp = { kind: "repeat" } | { kind: "stop" } | { kind: "call"; call: ToolCall };
+
+export function followUp(utterance: string, last: LastAnswer | null): FollowUp | null;

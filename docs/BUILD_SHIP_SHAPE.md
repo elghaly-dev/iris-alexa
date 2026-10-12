@@ -2,7 +2,7 @@
 
 Deadline: Fri Oct 23, 19:00 UTC. This is a draft for the owner. Nothing here has been submitted.
 
-Lines marked **[after merge]** describe work planned for Oct 11–21. Keep such a line once its pull request is merged, and put in the merge date.
+Lines marked **[in review]** are built and tested in an open draft pull request (Oct 11). Once it is merged, replace the mark with the merge date.
 
 ---
 
@@ -38,12 +38,13 @@ The repository's first commit is Sep 12, so all of it was built in the window.
 | Oct 1–2 | `/sim` reads event-stream answers; `safety_tip` topics from a fixed list of six; a tool error shows as an error; Devpost text and friction log. |
 | Oct 7 | Voice on `/sim`: hold to talk, deterministic utterance router, one tool call per utterance. |
 | Oct 10 | Spec fixes: a JSON-RPC batch from a 2025-06-18-or-later client gets 400 (batches were removed in 2025-06-18); the server binds to loopback unless `HOST` says otherwise. |
-| Oct 11–21 **[after merge]** | Structured results, spoken follow-ups on `/sim`, and a spec conformance check (see below). |
+| Oct 11 **[in review]** | Structured results, spoken follow-ups on `/sim`, a spec conformance check, and privacy and terms pages (see below). |
 
-### New in this round **[after merge]**
-1. **Structured results.** Each tool declares an `outputSchema` and returns `structuredContent` (verdict, spoken line, card fields) next to the text, so a host can speak one line and show a card. `/sim` shows the two side by side.
+### New in this round **[in review]**
+1. **Structured results.** Each tool declares an `outputSchema` and returns `structuredContent` (verdict, spoken line, card fields) next to the same JSON in the text block, so a host can speak one line and show a card. `/sim` reads the card and speaks its summary.
 2. **Spoken follow-ups on `/sim`.** After an answer, "what now?" gives the clean-up steps that match it, "say that again" repeats the spoken line, and "stop" ends. Same fixed router, no model.
-3. **Conformance check.** `npm run conformance` runs the 2025-11-25 Streamable HTTP checklist against a running server and prints a pass/fail table; a free GitHub Actions job runs it on every pull request.
+3. **Conformance check.** `npm run conformance` runs the 2025-11-25 Streamable HTTP checklist against a running server and prints a pass/fail table: 13 rules, including Host and Origin checks, the status codes, batch refusal, `outputSchema` on all five tools, and a refused seed phrase that is never echoed.
+4. **Privacy and terms pages.** `/privacy` and `/terms` on the server itself, for a public deploy: the server keeps nothing, makes one public RPC call to explain a transaction, and never touches a wallet.
 
 ### How it follows MCP 2025-11-25 (Streamable HTTP)
 | Request | Answer |
@@ -68,7 +69,8 @@ git clone https://github.com/elghaly-dev/iris-alexa.git
 cd iris-alexa && npm install && npm start
 # MCP endpoint:       http://127.0.0.1:3000/mcp
 # Simulated Alexa+:   http://127.0.0.1:3000/sim
-npm test        # 262 tests
+npm test        # 276 tests
+npm start & npm run conformance   # 13 rules against the running server
 ```
 
 ### Note for judges
@@ -88,7 +90,7 @@ Narration can be the owner's voice or a text-to-speech voice. If it is synthetic
 | 0:50–1:30 | `/sim` with the "Simulated Alexa+ page" banner in view. Hold to talk: "Someone from Phantom support asked for my seed phrase." Result card + spoken line. Then: "Is phantom-app dot support safe?" → lookalike. | "On the simulated page I hold to talk. A fixed router picks one tool, the page sends the same call a host would, and Iris answers in one sentence." |
 | 1:30–1:45 | Paste a 12-word test phrase into the text box → fixed refusal | "A pasted seed phrase is refused before any rule reads it. It is never sent, stored or logged." |
 | 1:45–2:10 | Timeline slide, the table "What changed between Aug 31 and Oct 23" | "Everything here was built after August 31. The repo starts on September 12; the server and five tools came on September 30; voice on the page on October 7; spec fixes on October 10." |
-| 2:10–2:35 | **[after merge]** `npm run conformance` printing a pass table; `/sim` showing card and spoken line side by side; say "what now?" → clean-up steps | "New this round: structured results a host can show as a card, spoken follow-ups like 'what now?', and a conformance check for the Streamable HTTP rules." |
+| 2:10–2:35 | `npm run conformance` printing "13 of 13 rules pass"; on `/sim`, the raw reply with `structuredContent` next to the spoken line; say "what now?" → the wallet clean-up steps | "New this round: structured results a host can show as a card, spoken follow-ups like 'what now?', and a conformance check for the Streamable HTTP rules." |
 | 2:35–2:45 | Closing slide: repo URL, "read-only · no keys · simulated page, not a real Alexa device" | "Iris is open source under MIT, self-hosted, and costs nothing to run. Thanks for watching." |
 
-Before recording: run `npm test` and `npm run conformance` on the same commit you link in Devpost, and keep the "Simulated Alexa+ page" banner visible in every `/sim` shot.
+Before recording: run `npm test`, then `npm start` and `npm run conformance`, on the same commit you link in Devpost, and keep the "Simulated Alexa+ page" banner visible in every `/sim` shot.

@@ -29,6 +29,12 @@ function toolReply(payload: unknown, isError = false): unknown {
 }
 
 describe("/sim page", () => {
+  it("reads the structured card when the reply has one", () => {
+    const { renderReply } = renderBlock();
+    const reply = { jsonrpc: "2.0", id: 1, result: { content: [], structuredContent: { refused: false, summary: "That is an official domain." }, isError: false } };
+    assert.deepEqual(renderReply(reply), { error: false, text: "That is an official domain." });
+  });
+
   const { renderReply } = renderBlock();
 
   it("shows a tool error as an error, never as a verdict", () => {
@@ -85,10 +91,10 @@ describe("/sim page", () => {
   it("holds to talk with the Web Speech API and routes the words", () => {
     assert.match(PAGE, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
     assert.match(PAGE, /rec\.lang = "en-US"/);
-    assert.match(PAGE, /import \{ route \} from "\/sim\/route\.js"/);
+    assert.match(PAGE, /import \{ route, followUp \} from "\/sim\/route\.js"/);
     assert.match(PAGE, /id="mic" hidden/);
     assert.match(PAGE, /mic\.hidden = true/);
-    assert.match(PAGE, /const call = route\(text\)/);
+    assert.match(PAGE, /: route\(text\);/);
     assert.match(PAGE, /callTool\(call\.name, call\.arguments, true\)/);
     assert.match(PAGE, /speechSynthesis\.speak\(new SpeechSynthesisUtterance/);
   });

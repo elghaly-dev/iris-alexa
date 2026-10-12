@@ -85,6 +85,14 @@ const INITIALIZED = JSON.stringify({ jsonrpc: "2.0", method: "notifications/init
 
 const TOOLS_LIST = JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" });
 
+/** The JSON-RPC result from a reply body, whether it came back as JSON or as one SSE event. */
+function rpcResult(body: string): unknown {
+  const data = body.trimStart().startsWith("{") ? body : (body.match(/^data: (.*)$/m)?.[1] ?? "");
+  const message = JSON.parse(data) as { result?: unknown; error?: unknown };
+  assert.ok(message.result, `no result in ${body.slice(0, 200)}`);
+  return message.result;
+}
+
 function toolCall(id: number, name: string, args: Record<string, unknown>): string {
   return JSON.stringify({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: args } });
 }
@@ -284,6 +292,35 @@ describe("/mcp hardening", () => {
     for (const name of ["explain_transaction", "check_scam", "check_link", "safety_tip", "clean_up_steps"]) {
       assert.match(reply.body, new RegExp(`"name":"${name}"`));
     }
+  });
+
+  it("every tool declares the card outputSchema", async () => {
+    const reply = await send(port, { body: TOOLS_LIST });
+    const tools = (rpcResult(reply.body) as { tools: Array<{ name: string; outputSchema?: { properties?: Record<string, unknown>; required?: string[] } }> }).tools;
+    assert.equal(tools.length, 5);
+    for (const tool of tools) {
+      assert.ok(tool.outputSchema, `${tool.name} has no outputSchema`);
+      assert.ok(tool.outputSchema.properties?.refused && tool.outputSchema.properties?.summary, tool.name);
+      assert.deepEqual(tool.outputSchema.required, ["refused"], tool.name);
+    }
+  });
+
+  it("a check returns structuredContent that equals the JSON in the text block", async () => {
+    const reply = await send(port, { body: toolCall(8, "check_link", { url: "phantom-app.support" }) });
+    assert.equal(reply.status, 200, reply.body);
+    const result = rpcResult(reply.body) as { content: Array<{ text: string }>; structuredContent: Record<string, unknown>; isError: boolean };
+    assert.equal(result.isError, false);
+    assert.equal(result.structuredContent.refused, false);
+    assert.equal(typeof result.structuredContent.summary, "string");
+    assert.deepEqual(JSON.parse(result.content[0].text), result.structuredContent);
+  });
+
+  it("a refusal is an error result with the same card shape", async () => {
+    const reply = await send(port, { body: toolCall(9, "check_scam", { situation: "should I buy SOL now, is the price going up?" }) });
+    const result = rpcResult(reply.body) as { structuredContent: Record<string, unknown>; isError: boolean };
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.refused, true);
+    assert.equal(typeof result.structuredContent.summary, "string");
   });
 
   it("answers safety_tip for a topic typed with a space", async () => {

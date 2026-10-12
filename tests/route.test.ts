@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { route } from "../sim/route.js";
+import { followUp, route } from "../sim/route.js";
 
 const SIG88 = "1".repeat(88);
 const SIG87 = "2".repeat(87);
@@ -130,5 +130,42 @@ describe("utterance router", () => {
     assert.equal(call.arguments.situation, SEED);
     assert.equal(Object.hasOwn(call, "refused"), false);
     assert.equal(Object.hasOwn(call.arguments, "refused"), false);
+  });
+});
+
+describe("spoken follow-ups", () => {
+  const afterLink = { tool: "check_link" as const, spoken: "Stop. That is a lookalike of Phantom." };
+  const afterCleanup = { tool: "clean_up_steps" as const, target: "iphone", spoken: "Open Settings." };
+
+  it("'what now?' after a check gives the wallet clean-up steps", () => {
+    for (const said of ["what now?", "What now", "okay, what should I do now?", "now what", "what do I do"]) {
+      assert.deepEqual(followUp(said, afterLink), { kind: "call", call: { name: "clean_up_steps", arguments: { target: "wallet" } } }, said);
+    }
+  });
+
+  it("'what now?' after clean-up steps keeps the same device", () => {
+    assert.deepEqual(followUp("what next?", afterCleanup), { kind: "call", call: { name: "clean_up_steps", arguments: { target: "iphone" } } });
+  });
+
+  it("'say that again' repeats and 'stop' stops", () => {
+    assert.deepEqual(followUp("say that again", afterLink), { kind: "repeat" });
+    assert.deepEqual(followUp("Repeat that.", afterLink), { kind: "repeat" });
+    assert.deepEqual(followUp("stop", afterLink), { kind: "stop" });
+    assert.deepEqual(followUp("never mind", null), { kind: "stop" });
+  });
+
+  it("needs a previous answer before repeating or 'what now?'", () => {
+    assert.equal(followUp("say that again", null), null);
+    assert.equal(followUp("what now?", null), null);
+  });
+
+  it("a longer message that contains those words is a new question, not a follow-up", () => {
+    for (const said of [
+      "Stop! Your wallet will be deactivated, what now? Click phantom-verify.app",
+      "they said repeat your seed phrase to support",
+      "what should I do about this airdrop claim link",
+    ]) {
+      assert.equal(followUp(said, afterLink), null, said);
+    }
   });
 });
