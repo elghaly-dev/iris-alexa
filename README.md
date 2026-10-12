@@ -5,7 +5,7 @@
 Self-hosted, read-only [Model Context Protocol](https://modelcontextprotocol.io) server for Alexa+ and other MCP hosts. It speaks **Streamable HTTP** with the official TypeScript SDK (`@modelcontextprotocol/server` and `@modelcontextprotocol/node`) on MCP spec **2025-11-25** or later.
 
 ```bash
-git clone https://github.com/Alarm2024/iris-alexa.git
+git clone https://github.com/elghaly-dev/iris-alexa.git
 cd iris-alexa
 ```
 
@@ -23,7 +23,7 @@ The server stores nothing. It does not log tool arguments. It holds no private k
 | `safety_tip` | Optional `topic` | One short reminder written to be spoken aloud. Topics: `general`, `seed_phrase`, `links`, `approvals`, `support`, `qr_codes`. |
 | `clean_up_steps` | `target`: `iphone`, `android`, or `wallet` | A checklist you do yourself on that device. |
 
-`check_link` and `safety_tip` were ported from [Alarm2024/iris-alexa-guard](https://github.com/Alarm2024/iris-alexa-guard).
+`check_link` and `safety_tip` were ported from an earlier private prototype of ours.
 
 AI-assisted analysis of public pages.
 
@@ -78,20 +78,22 @@ A description of a scam ("they asked for my seed", "urgent link to verify your w
 Needs **Node 22** (or Node `>=20.12`). From a fresh clone:
 
 ```bash
-git clone https://github.com/Alarm2024/iris-alexa.git
+git clone https://github.com/elghaly-dev/iris-alexa.git
 cd iris-alexa
 npm install
 cp .env.example .env   # optional
 npm start
 ```
 
-Listens on `0.0.0.0:$PORT` (default port `3000`). `.env` is read with `process.loadEnvFile()`.
+Listens on `127.0.0.1:$PORT` by default (port `3000`); set `HOST=0.0.0.0` to accept outside connections, as `render.yaml` does. `.env` is read with `process.loadEnvFile()`.
 
 | URL | Purpose |
 | --- | --- |
 | `http://127.0.0.1:3000/mcp` | Streamable HTTP MCP |
 | `http://127.0.0.1:3000/health` | Status. No user data. |
 | `http://127.0.0.1:3000/sim` | Simulated assistant page (`sim/alexa-page.html`) |
+| `http://127.0.0.1:3000/privacy` | Privacy page (`pages/privacy.html`): what the server receives and keeps (nothing) |
+| `http://127.0.0.1:3000/terms` | Terms page (`pages/terms.html`): safety information, not advice; MIT, no warranty |
 
 ### What `/mcp` enforces
 
@@ -105,6 +107,7 @@ Listens on `0.0.0.0:$PORT` (default port `3000`). `.env` is read with `process.l
 | `Content-Type` not `application/json` | `415` |
 | Body over 64 KB, declared or streamed | `413` |
 | Body that is not JSON | `400` |
+| A JSON array (batch) from a client that sends `MCP-Protocol-Version` 2025-06-18 or later | `400`. Batches were removed in 2025-06-18. |
 | `notifications/initialized` | `202`, no body |
 
 Every error body is fixed text. Nothing from the request, and no exception message, is echoed back.
@@ -120,7 +123,7 @@ On the free plan the service sleeps after about 15 minutes without traffic. The 
 One hackathon entry. MIT license. Tested with **MCP Inspector** and a **simulated** page at `/sim` — not real Alexa+. No Amazon or Alexa logos or sounds in `/sim` or this README.
 
 - **MCP Inspector**, CLI mode, over Streamable HTTP: `tools/list` and a `tools/call` on each tool, including each refusal. This runs in `npm test` and in `scripts/smoke.sh`.
-- **A simulated page** at `http://127.0.0.1:3000/sim` (source in `sim/alexa-page.html`). It posts the same JSON-RPC calls an MCP host sends to `/mcp`, shows the text an assistant would read out, and can speak it with the browser speech API. It is served same-origin. It is a stand-in for an MCP host; this repo makes no claim about Amazon registration format, and includes none.
+- **A simulated page** at `http://127.0.0.1:3000/sim` (source in `sim/alexa-page.html`). It posts the same JSON-RPC calls an MCP host sends to `/mcp`, shows the text an assistant would read out, and can speak it with the browser speech API. Hold the mic to talk (`en-US`, browser Web Speech API). `sim/route.js` maps that utterance to one tool call with fixed rules and no model. It is served same-origin. It is a stand-in for an MCP host; this repo makes no claim about Amazon registration format, and includes none.
 
 ```bash
 npx mcp-inspector --cli http://127.0.0.1:3000/mcp --transport http --method tools/list
@@ -130,6 +133,13 @@ npx mcp-inspector --cli http://127.0.0.1:3000/mcp --transport http --method tool
 npx mcp-inspector --cli http://127.0.0.1:3000/mcp --transport http \
   --method tools/call --tool-name check_link --tool-arg url=phantom.com.attacker.example
 ```
+
+## What we built during the hackathon window (Aug 31 – Oct 23)
+
+- **MCP server (new Sep 12).** Self-hosted, read-only Streamable HTTP. The first commit in this repo is 12 Sep 2026. Spec 2025-11-25.
+- **Five tools.** `explain_transaction`, `check_scam`, `check_link`, `safety_tip`, `clean_up_steps`.
+- **Hardened `/mcp`.** Host and Origin checks, 405 on GET and DELETE, 406 unless Accept lists both `application/json` and `text/event-stream`, 400 for an unknown `MCP-Protocol-Version`, 415 for a non-JSON body, 413 over 64 KB, 202 for `notifications/initialized`, and error bodies of fixed text.
+- **Voice `/sim`.** Hold to talk on the simulated page, through the browser Web Speech API. `sim/route.js` maps the utterance to one tool call with fixed rules and no model, in this order: a URL or domain → `check_link`, an 87- or 88-character base58 signature → `explain_transaction`, "tip" or "remind me" → `safety_tip`, "clean up" or "I got hacked" with iphone, android, or wallet → `clean_up_steps`, and anything else → `check_scam`. The page posts that `tools/call` to `/mcp`, shows the result, and speaks the `summary`. A seed phrase is sent through, and the server refuses it. The page is a stand-in for an MCP host.
 
 ## Tests
 
@@ -145,3 +155,5 @@ Fixtures in `tests/fixtures.ts`: real scam lines, synthetic scam lines, normal l
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Docs and images: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), © elghaly. Third-party fonts, logos and screenshots of other services keep their own licenses.

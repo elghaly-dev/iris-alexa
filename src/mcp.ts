@@ -17,12 +17,27 @@ const SERVER_VERSION = "1.1.0";
 
 type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
+  structuredContent: Record<string, unknown>;
   isError: boolean;
 };
 
-function textResult(payload: unknown, isError = false): ToolResult {
+/**
+ * Every tool returns the same card shape: `refused` always, and a one-sentence `summary` to
+ * speak whenever there is an answer. The rest of the fields depend on the tool, so the schema
+ * is loose. A host can show the card and speak just the summary; older hosts read the same
+ * JSON from the text block.
+ */
+export const CARD_OUTPUT = z.looseObject({
+  refused: z.boolean().describe("True when Iris refused the request (seed phrase, price advice, wallet connect or sign)."),
+  summary: z.string().optional().describe("One sentence written to be spoken aloud."),
+  verdict: z.string().optional().describe("The check's verdict, when the tool gives one."),
+  reason: z.string().optional().describe("Machine-readable reason code."),
+});
+
+function textResult(payload: object, isError = false): ToolResult {
   return {
     content: [{ type: "text" as const, text: JSON.stringify(payload) }],
+    structuredContent: { ...payload },
     isError,
   };
 }
@@ -69,6 +84,7 @@ export function createIrisServer(): McpServer {
       inputSchema: z.object({
         signature: z.string().max(2048).describe("Public Solana transaction signature, or an explorer URL containing one."),
       }),
+      outputSchema: CARD_OUTPUT,
       annotations: { ...READ_ONLY, openWorldHint: true },
     },
     guarded(async ({ signature }) => {
@@ -86,6 +102,7 @@ export function createIrisServer(): McpServer {
       inputSchema: z.object({
         situation: z.string().max(8192).describe("What the person said or the message they received. Do not include a seed phrase."),
       }),
+      outputSchema: CARD_OUTPUT,
       annotations: { ...READ_ONLY, openWorldHint: false },
     },
     guarded(({ situation }) => resultFor(evaluateMessage(situation))),
@@ -100,6 +117,7 @@ export function createIrisServer(): McpServer {
       inputSchema: z.object({
         url: z.string().max(2048).describe("A URL, a domain, or a short message containing one."),
       }),
+      outputSchema: CARD_OUTPUT,
       annotations: { ...READ_ONLY, openWorldHint: false },
     },
     guarded(({ url }) => resultFor(evaluateLink(url))),
@@ -113,6 +131,7 @@ export function createIrisServer(): McpServer {
       inputSchema: z.object({
         topic: z.string().max(32).optional().describe("Which reminder. Defaults to general."),
       }),
+      outputSchema: CARD_OUTPUT,
       annotations: { ...READ_ONLY, openWorldHint: false },
     },
     guarded(({ topic }) => {
@@ -133,6 +152,7 @@ export function createIrisServer(): McpServer {
       inputSchema: z.object({
         target: z.enum(["iphone", "android", "wallet"]).describe("Which checklist to return."),
       }),
+      outputSchema: CARD_OUTPUT,
       annotations: { ...READ_ONLY, openWorldHint: false },
     },
     guarded(({ target }) => {

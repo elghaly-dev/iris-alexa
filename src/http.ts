@@ -9,7 +9,16 @@ import { createIrisServer } from "./mcp.js";
 export const MCP_PATH = "/mcp";
 /** The simulated Alexa+ page, served same-origin so a browser can post to /mcp without CORS. */
 export const SIM_PATH = "/sim";
-const SIM_PAGE = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../sim/alexa-page.html"), "utf8");
+const SIM_DIR = join(dirname(fileURLToPath(import.meta.url)), "../sim");
+const SIM_PAGE = readFileSync(join(SIM_DIR, "alexa-page.html"), "utf8");
+/** Deterministic utterance router. The sim page imports this same file. */
+const SIM_ROUTE_JS = readFileSync(join(SIM_DIR, "route.js"), "utf8");
+/** Plain privacy and terms pages, for a public deploy and the Devpost form. */
+const PAGES_DIR = join(dirname(fileURLToPath(import.meta.url)), "../pages");
+export const STATIC_PAGES: Record<string, string> = {
+  "/privacy": readFileSync(join(PAGES_DIR, "privacy.html"), "utf8"),
+  "/terms": readFileSync(join(PAGES_DIR, "terms.html"), "utf8"),
+};
 export const MCP_SPEC = "2025-11-25";
 /** Hard cap on a request body. Tool inputs are short strings; anything bigger is refused. */
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -25,6 +34,7 @@ const CLIENT_TEXT = {
   unsupportedMediaType: "Unsupported media type. Send application/json.",
   tooLarge: "Payload too large. The request body must be 64 KB or smaller.",
   parseError: "Parse error. The request body is not valid JSON.",
+  batch: "Batch requests are not supported. Send one JSON-RPC message per request.",
   internal: "Internal server error.",
   notFound: "Not found.",
 } as const;
@@ -87,6 +97,17 @@ export function acceptsMcp(accept: string | undefined): boolean {
   const json = wildcard || types.includes("application/json") || types.includes("application/*");
   const sse = wildcard || types.includes("text/event-stream") || types.includes("text/*");
   return json && sse;
+}
+
+/**
+ * JSON-RPC batches were removed in 2025-06-18: a POST body must be one message. A client that
+ * names 2025-06-18 or later and sends an array gets 400. With no header (2025-03-26 assumed)
+ * or an older version the array goes on to the SDK, which still handles it.
+ */
+export function batchAllowed(header: string | string[] | undefined): boolean {
+  if (header === undefined) return true;
+  const value = (Array.isArray(header) ? header[0] : header).trim();
+  return value < "2025-06-18";
 }
 
 /** Absent is allowed (the spec says assume an older version). Present must be a known version. */
@@ -218,6 +239,10 @@ export function createMcpRequestHandler(allowed: string[]): McpRequestGuard {
       sendError(res, 400, CLIENT_TEXT.parseError);
       return;
     }
+    if (Array.isArray(parsed) && !batchAllowed(req.headers["mcp-protocol-version"])) {
+      sendError(res, 400, CLIENT_TEXT.batch);
+      return;
+    }
 
     try {
       await nodeHandler(req, res, parsed);
@@ -230,7 +255,8 @@ export function createMcpRequestHandler(allowed: string[]): McpRequestGuard {
 
 export function startServer(options: { host?: string; port?: number; env?: NodeJS.ProcessEnv } = {}): Promise<Server> {
   const env = options.env ?? process.env;
-  const host = options.host ?? env.HOST ?? "0.0.0.0";
+  // Local runs bind to loopback, as the spec advises. A host such as Render sets HOST=0.0.0.0.
+  const host = options.host ?? env.HOST ?? "127.0.0.1";
   const port = options.port ?? Number(env.PORT ?? 3000);
   const handleMcp = createMcpRequestHandler(allowedHostnames(env));
 
@@ -249,9 +275,19 @@ export function startServer(options: { host?: string; port?: number; env?: NodeJ
       );
       return;
     }
+    if (req.method === "GET" && path === `${SIM_PATH}/route.js`) {
+      res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" });
+      res.end(SIM_ROUTE_JS);
+      return;
+    }
     if (req.method === "GET" && path === SIM_PATH) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
       res.end(SIM_PAGE);
+      return;
+    }
+    if (req.method === "GET" && Object.hasOwn(STATIC_PAGES, path)) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=3600" });
+      res.end(STATIC_PAGES[path]);
       return;
     }
     if (path !== MCP_PATH) {

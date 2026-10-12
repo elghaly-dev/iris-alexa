@@ -3,6 +3,7 @@ import { request, type Server } from "node:http";
 import { after, before, describe, it } from "node:test";
 import {
   acceptsMcp,
+  batchAllowed,
   hostnameOf,
   isHostAllowed,
   isOriginAllowed,
@@ -84,6 +85,14 @@ const INITIALIZED = JSON.stringify({ jsonrpc: "2.0", method: "notifications/init
 
 const TOOLS_LIST = JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" });
 
+/** The JSON-RPC result from a reply body, whether it came back as JSON or as one SSE event. */
+function rpcResult(body: string): unknown {
+  const data = body.trimStart().startsWith("{") ? body : (body.match(/^data: (.*)$/m)?.[1] ?? "");
+  const message = JSON.parse(data) as { result?: unknown; error?: unknown };
+  assert.ok(message.result, `no result in ${body.slice(0, 200)}`);
+  return message.result;
+}
+
 function toolCall(id: number, name: string, args: Record<string, unknown>): string {
   return JSON.stringify({ jsonrpc: "2.0", id, method: "tools/call", params: { name, arguments: args } });
 }
@@ -118,6 +127,13 @@ describe("header helpers", () => {
     assert.equal(acceptsMcp("*/*"), true);
     assert.equal(acceptsMcp("application/json"), false);
     assert.equal(acceptsMcp(undefined), false);
+  });
+
+  it("allows a batch before 2025-06-18 and refuses it from then on", () => {
+    assert.equal(batchAllowed(undefined), true);
+    assert.equal(batchAllowed("2025-03-26"), true);
+    assert.equal(batchAllowed("2025-06-18"), false);
+    assert.equal(batchAllowed("2025-11-25"), false);
   });
 
   it("accepts a missing or supported MCP-Protocol-Version and rejects an unknown one", () => {
@@ -165,6 +181,17 @@ describe("/mcp hardening", () => {
   it("answers DELETE /mcp with 405", async () => {
     const reply = await send(port, { method: "DELETE" });
     assert.equal(reply.status, 405);
+  });
+
+  it("rejects a JSON-RPC batch from a 2025-11-25 client with 400", async () => {
+    const reply = await send(port, { body: `[${TOOLS_LIST}]` });
+    assert.equal(reply.status, 400, reply.body);
+    assert.match(reply.body, /one JSON-RPC message per request/);
+  });
+
+  it("leaves a batch from a client with no version header to the SDK", async () => {
+    const reply = await send(port, { body: `[${TOOLS_LIST}]`, headers: { "mcp-protocol-version": null } });
+    assert.notEqual(reply.status, 400, reply.body);
   });
 
   it("rejects an Accept header without text/event-stream with 406", async () => {
@@ -267,6 +294,35 @@ describe("/mcp hardening", () => {
     }
   });
 
+  it("every tool declares the card outputSchema", async () => {
+    const reply = await send(port, { body: TOOLS_LIST });
+    const tools = (rpcResult(reply.body) as { tools: Array<{ name: string; outputSchema?: { properties?: Record<string, unknown>; required?: string[] } }> }).tools;
+    assert.equal(tools.length, 5);
+    for (const tool of tools) {
+      assert.ok(tool.outputSchema, `${tool.name} has no outputSchema`);
+      assert.ok(tool.outputSchema.properties?.refused && tool.outputSchema.properties?.summary, tool.name);
+      assert.deepEqual(tool.outputSchema.required, ["refused"], tool.name);
+    }
+  });
+
+  it("a check returns structuredContent that equals the JSON in the text block", async () => {
+    const reply = await send(port, { body: toolCall(8, "check_link", { url: "phantom-app.support" }) });
+    assert.equal(reply.status, 200, reply.body);
+    const result = rpcResult(reply.body) as { content: Array<{ text: string }>; structuredContent: Record<string, unknown>; isError: boolean };
+    assert.equal(result.isError, false);
+    assert.equal(result.structuredContent.refused, false);
+    assert.equal(typeof result.structuredContent.summary, "string");
+    assert.deepEqual(JSON.parse(result.content[0].text), result.structuredContent);
+  });
+
+  it("a refusal is an error result with the same card shape", async () => {
+    const reply = await send(port, { body: toolCall(9, "check_scam", { situation: "should I buy SOL now, is the price going up?" }) });
+    const result = rpcResult(reply.body) as { structuredContent: Record<string, unknown>; isError: boolean };
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.refused, true);
+    assert.equal(typeof result.structuredContent.summary, "string");
+  });
+
   it("answers safety_tip for a topic typed with a space", async () => {
     const reply = await send(port, { body: toolCall(6, "safety_tip", { topic: "seed phrase" }) });
     assert.equal(reply.status, 200, reply.body);
@@ -294,6 +350,13 @@ describe("/mcp hardening", () => {
     assert.match(reply.body, /Simulated Alexa\+ page — not a real Alexa device/);
     assert.match(reply.body, /iris-alexa/);
     assert.match(reply.body, /fetch\("\/mcp"/);
+  });
+
+  it("serves the utterance router next to the simulated page", async () => {
+    const reply = await send(port, { path: "/sim/route.js", method: "GET" });
+    assert.equal(reply.status, 200);
+    assert.match(String(reply.headers["content-type"]), /javascript/);
+    assert.match(reply.body, /export function route/);
   });
 
   it("keeps /health free of user data", async () => {
