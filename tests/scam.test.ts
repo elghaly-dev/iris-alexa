@@ -64,6 +64,17 @@ describe("check_scam patterns", () => {
   });
 });
 
+describe("support-style wallet questions", () => {
+  it("flags the reconnect-via-dapps DM but not the bare question", () => {
+    const dm = checkScam("Reconnecting your wallet via dapps What wallet are you using?");
+    assert.equal(dm.verdict, "scam");
+    assert.equal(dm.pattern, "fake_support_dm");
+    const bare = checkScam("What wallet are you using? I like Phantom for NFTs.");
+    assert.equal(bare.verdict, "no_known_pattern");
+    assert.equal(bare.pattern, null);
+  });
+});
+
 describe("never share scope", () => {
   it("does not flag a warning by itself", () => {
     assert.equal(asksForSeed("never share your seed phrase with anyone"), false);
