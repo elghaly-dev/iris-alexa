@@ -2,7 +2,7 @@
 
 **Total time:** about 2 minutes 40 seconds. **Hard cap:** 2:45.
 
-**On-screen rules for every shot:** show the banner **“Simulated Alexa+ page — not a real Alexa device”** at the top of `/sim`. No API keys, `.env`, seed phrases, wallet addresses you control, or personal contact details on screen. Use placeholder URLs and public example text only.
+**On-screen rules for every shot:** show the banner **“Simulated Alexa+ page — not a real Alexa device”** at the top of `/sim`. No API keys, `.env`, seed phrases, wallet addresses you control, or personal contact details on screen. Use placeholder URLs and public example text.
 
 **Voice:** your voice or a labeled AI voice. First spoken line says this is a simulation.
 

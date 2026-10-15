@@ -38,7 +38,7 @@ A clean result says "This is not a clearance."
 - **Server:** TypeScript on Node 22, using the official MCP TypeScript SDK (`@modelcontextprotocol/server` and `@modelcontextprotocol/node`) over Streamable HTTP, spec 2025-11-25. Zod schemas for every tool input.
 - **Decoder:** the transaction decoder is the same one the Iris web page uses (`sol-decode.js`).
 - **`/mcp` endpoint, hardened:** Host and Origin checks; 405 for GET and DELETE; 406 unless Accept lists both `application/json` and `text/event-stream`; 400 for an unknown `MCP-Protocol-Version`; 415 for a non-JSON body, 413 over 64 KB; 202 for `notifications/initialized`; every error body is fixed text.
-- **Privacy:** the server stores no tool inputs and does not log them. Error logs may record only the error kind. Privacy and terms are served at `/privacy` and `/terms`.
+- **Privacy:** the server stores no tool inputs and does not log them. Error logs may record just the error kind. Privacy and terms are served at `/privacy` and `/terms`.
 - **Structured results:** every tool declares an `outputSchema` and returns `structuredContent` next to the same JSON as text.
 - **Simulated host:** `/sim` posts the same JSON-RPC a host sends, shows the spoken `summary`, optional browser speech, hold-to-talk via Web Speech API, and a deterministic router (`sim/route.js`, no model).
 - **Tests:** 276 unit tests plus `npm run conformance` (13 Streamable HTTP rules against a running server).

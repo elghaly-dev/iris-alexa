@@ -16,14 +16,14 @@
 <p>Iris for Alexa+ is a read-only MCP server from elghaly (Wyndham Heaven). It checks crypto messages, links, and public Solana transactions for known scam patterns. It is not made by Amazon.</p>
 
 <h2>What the server receives</h2>
-<p>Only what a tool call contains: the message or description you ask about, a link or domain, a public Solana transaction signature, or the name of a topic or device. There are no accounts, no sign-in, and no cookies set by Iris.</p>
+<p>We receive what a tool call contains: the message or description you ask about, a link or domain, a public Solana transaction signature, or the name of a topic or device. There are no accounts, no sign-in, and no cookies set by Iris.</p>
 
 <h2>What it does with it</h2>
 <ul>
   <li>It checks the input in memory, returns an answer, and keeps nothing. Tool inputs are not written to a database or a file.</li>
-  <li>When something fails, the server may write a short log line with only the error kind (for example <code>tool error name=Error</code>). It does not log the text you sent.</li>
+  <li>When something fails, the server may write a short log line with just the error kind (for example <code>tool error name=Error</code>). It does not log the text you sent.</li>
   <li>A 12- or 24-word seed phrase is refused before any rule reads it. It is not sent to the RPC, stored, or logged.</li>
-  <li>Links are never opened or fetched. They are checked as text only.</li>
+  <li>Links are never opened or fetched. They are checked as text, nothing more.</li>
   <li>To explain a transaction, the server makes one request to a public Solana RPC with the signature you gave. That signature is already public on the chain.</li>
 </ul>
 
@@ -37,6 +37,6 @@
 <p>The page at <a href="/sim">/sim</a> is a <strong>simulated Alexa+ page, not a real Alexa device</strong>. It has no Amazon or Alexa logos or sounds. Hold-to-talk uses your browser's speech recognition; what your browser does with audio is controlled by your browser, not by Iris.</p>
 
 <h2>Contact</h2>
-<p>Email first: <a href="mailto:support@elghaly.dev">support@elghaly.dev</a>. Calls only by appointment. See also the <a href="/terms">terms</a>.</p>
+<p>Email first: <a href="mailto:support@elghaly.dev">support@elghaly.dev</a>. Calls by appointment. See also the <a href="/terms">terms</a>.</p>
 </body>
 </html>
