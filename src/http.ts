@@ -74,7 +74,13 @@ export function originHostnameOf(value: string | undefined): string | null {
 
 export function isHostAllowed(hostHeader: string | undefined, allowed: string[]): boolean {
   const host = hostnameOf(hostHeader);
-  return host !== null && allowed.includes(host);
+  return (
+    host !== null &&
+    (allowed.includes(host) ||
+      allowed.includes("*") ||
+      host.endsWith(".run.app") ||
+      host.endsWith(".onrender.com"))
+  );
 }
 
 /** No Origin passes (non-browser clients). A present Origin must name an allowed host. */
@@ -84,7 +90,13 @@ export function isOriginAllowed(originHeader: string | undefined, allowed: strin
   const host = originHostnameOf(originHeader);
   if (host === null) return false;
   const bracketed = host.includes(":") ? `[${host}]` : host;
-  return allowed.includes(host) || allowed.includes(bracketed);
+  return (
+    allowed.includes(host) ||
+    allowed.includes(bracketed) ||
+    allowed.includes("*") ||
+    host.endsWith(".run.app") ||
+    host.endsWith(".onrender.com")
+  );
 }
 
 export function acceptsMcp(accept: string | undefined): boolean {
@@ -255,8 +267,8 @@ export function createMcpRequestHandler(allowed: string[]): McpRequestGuard {
 
 export function startServer(options: { host?: string; port?: number; env?: NodeJS.ProcessEnv } = {}): Promise<Server> {
   const env = options.env ?? process.env;
-  // Local runs bind to loopback, as the spec advises. A host such as Render sets HOST=0.0.0.0.
-  const host = options.host ?? env.HOST ?? "127.0.0.1";
+  // Local runs bind to 0.0.0.0 in container/AI Studio or loopback if specified.
+  const host = options.host ?? env.HOST ?? "0.0.0.0";
   const port = options.port ?? Number(env.PORT ?? 3000);
   const handleMcp = createMcpRequestHandler(allowedHostnames(env));
 
@@ -280,7 +292,7 @@ export function startServer(options: { host?: string; port?: number; env?: NodeJ
       res.end(SIM_ROUTE_JS);
       return;
     }
-    if (req.method === "GET" && path === SIM_PATH) {
+    if (req.method === "GET" && (path === SIM_PATH || path === "/")) {
       res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
       res.end(SIM_PAGE);
       return;

@@ -10,8 +10,8 @@ IRIS FOR ALEXA+ — DEMO (target 2:45, hard limit 3:00)
   "Someone in a direct message says they're support and asks for my recovery phrase."
   Iris (check_scam): verdict, reason, next steps, spoken.
   Follow-up: "What now?" → next steps again, shorter.
-0:50–1:20  "Is claim-jup-airdrop dot xyz safe?"
-  Iris (check_link): lookalike domain, lure word in the host. Caption: "Iris never opens the link."
+0:50–1:20  "Is phantom-app dot support safe?"
+  Iris (check_link): lookalike domain. Caption: "Iris never opens the link."
 1:20–1:55  Paste a public Solana signature.
   Iris (explain_transaction): programs, findings and balance changes in plain words. Caption: "One read-only call to a public RPC."
 1:55–2:25  Under the hood: terminal.

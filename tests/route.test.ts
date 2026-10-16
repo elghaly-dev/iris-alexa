@@ -42,6 +42,13 @@ describe("utterance router", () => {
     });
   });
 
+  it("hears a spoken domain ending with .support as check_link", () => {
+    assert.deepEqual(route("is phantom-app dot support safe"), {
+      name: "check_link",
+      arguments: { url: "phantom-app.support" },
+    });
+  });
+
   it("prefers a URL over a tip and over a signature", () => {
     assert.equal(route(`tip me about https://solscan.io/tx/${SIG88}`).name, "check_link");
     assert.equal(route(`tip me about https://solscan.io/tx/${SIG88}`).arguments.url, `https://solscan.io/tx/${SIG88}`);

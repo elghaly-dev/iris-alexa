@@ -23,7 +23,7 @@ export const NOT_A_CLEARANCE = "This is not a clearance.";
 const SECRET =
   "(?:\\d+\\s*-?\\s*words?\\s+(?:seed\\s+|recovery\\s+)?phrase|seed\\s*phrase|seedphrase|recovery\\s*(?:phrase|words)|mnemonic|secret\\s*(?:phrase|words|recovery\\s*phrase)|backup\\s*phrase|private\\s*key)";
 const ASK_VERB =
-  "(?:reply\\s+with|enter|confirm|send|share|type|provide|paste|submit|give|input|upload|verify|fill\\s+in|drop|post)";
+  "(?:reply\\s+with|enter|confirm|send|share|type|provide|paste|submit|give|input|upload|verify|fill\\s+in|drop|post|(?:asked|asks?)(?:\\s+(?:me|us))?\\s+for|requested(?:\\s+(?:me|us))?(?:\\s+for)?|wants?|needs?)";
 const SEED_ASK = new RegExp(
   `${ASK_VERB}\\s+(?:(?:me|us)\\s+)?(?:(?:your|the|my|a|an)\\s+)?(?:\\w+\\s+){0,2}?${SECRET}`,
   "gi",
@@ -31,7 +31,8 @@ const SEED_ASK = new RegExp(
 const SEED_QUESTION = new RegExp(`what\\s+(?:is|are|was)\\s+(?:your|the)\\s+(?:\\w+\\s+){0,2}?${SECRET}`, "i");
 
 /** "never share" or "do not share" right before the ask is advice, not a request. */
-const NEGATED_BEFORE = /(?:never|do\s+not|don't|dont|do\s+never|should\s+not|shouldn't|must\s+not)\s*(?:\w+\s+)?$/i;
+const NEGATED_BEFORE =
+  /(?:never|do\s+not|don't|dont|do\s+never|should\s+not|shouldn't|must\s+not|will\s+not|won't|wont|would\s+not|wouldn't)\s*(?:\w+\s+)?$/i;
 
 /**
  * A request to reply with, enter, confirm, send, share, type, or otherwise hand over the secret.

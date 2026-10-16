@@ -8,6 +8,9 @@
     "node": ">=20.12"
   },
   "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc --noEmit",
+    "sim": "tsx src/index.ts",
     "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",

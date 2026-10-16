@@ -79,6 +79,30 @@ describe("never share scope", () => {
   it("flags a question for the words", () => {
     assert.equal(asksForSeed("what is your seed phrase?"), true);
   });
+
+  it("catches asked for / asks for / wants / requested / needs my seed or recovery phrase", () => {
+    const positive = [
+      "Someone asked for my seed phrase",
+      "Support asks for my recovery phrase",
+      "The caller wants my seed phrase",
+      "They requested my recovery phrase",
+      "A message needs my recovery phrase",
+    ];
+    for (const line of positive) {
+      assert.equal(asksForSeed(line), true, `asksForSeed: ${line}`);
+      const report = checkScam(line);
+      assert.equal(report.verdict, "scam", `checkScam verdict: ${line}`);
+      assert.equal(report.pattern, "seed_phrase_request", `checkScam pattern: ${line}`);
+    }
+  });
+
+  it("keeps 'Phantom will never ask for your recovery phrase' clean", () => {
+    const cleanLine = "Phantom will never ask for your recovery phrase";
+    assert.equal(asksForSeed(cleanLine), false);
+    const report = checkScam(cleanLine);
+    assert.equal(report.verdict, "no_known_pattern");
+    assert.equal(report.pattern, null);
+  });
 });
 
 describe("detection order", () => {
