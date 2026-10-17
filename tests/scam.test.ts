@@ -91,13 +91,17 @@ describe("never share scope", () => {
     assert.equal(asksForSeed("what is your seed phrase?"), true);
   });
 
-  it("catches asked for / asks for / wants / requested / needs my seed or recovery phrase", () => {
+  it("catches whole-word ask verbs before seed or recovery phrase", () => {
     const positive = [
       "Someone asked for my seed phrase",
       "Support asks for my recovery phrase",
       "The caller wants my seed phrase",
       "They requested my recovery phrase",
       "A message needs my recovery phrase",
+      "Support is asking for my recovery phrase",
+      "They wanted my seed phrase yesterday",
+      "They are requesting my recovery phrase now",
+      "The bot needed my seed phrase to continue",
     ];
     for (const line of positive) {
       assert.equal(asksForSeed(line), true, `asksForSeed: ${line}`);
@@ -113,6 +117,12 @@ describe("never share scope", () => {
     const report = checkScam(cleanLine);
     assert.equal(report.verdict, "no_known_pattern");
     assert.equal(report.pattern, null);
+  });
+
+  it("keeps 'I will never ask for your recovery phrase' clean", () => {
+    const cleanLine = "I will never ask for your recovery phrase when we troubleshoot together.";
+    assert.equal(asksForSeed(cleanLine), false);
+    assert.equal(checkScam(cleanLine).verdict, "no_known_pattern");
   });
 });
 

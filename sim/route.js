@@ -76,7 +76,7 @@ function trimTrail(value) {
 
 function spokenHost(text) {
   if (!/\sdot\s/i.test(text)) return null;
-  const spoken = text.replace(/\s+dot\s+/gi, ".");
+  const spoken = text.replace(/(?<=\w)\s+dot\s+(?=\w)/gi, ".");
   const match = spoken.match(URL_IN_TEXT);
   if (!match) return null;
   const candidate = trimTrail(match[0]);

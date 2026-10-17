@@ -127,6 +127,11 @@ const LURE_WORD = /(?:claim|airdrop|drop|sync|rectif\w*|repair|auth|reward|verif
 const URL_IN_TEXT =
   /(?:https?:\/\/|www\.)[^\s<>"'()]+|\b(?:[a-z0-9-]+\.)+(?:[a-z]{2,24}|xn--[a-z0-9-]+)(?:\/[^\s<>"'()]*)?/i;
 
+/** Typed or spoken "word dot word" → "." before host extraction (between word tokens). */
+export function expandWordDot(text: string): string {
+  return text.replace(/(?<=\w)\s+dot\s+(?=\w)/gi, ".");
+}
+
 export interface CheckLinkOptions {
   /** When false, skip the reported-host list and run pattern rules alone. Default true. */
   useReportedList?: boolean;
@@ -162,7 +167,7 @@ function parseHostname(raw: string): string | null {
  * Never uses substring matching for the verdict host.
  */
 export function normalizeHost(input: string): string | null {
-  const trimmed = input.trim();
+  const trimmed = expandWordDot(input.trim());
   if (!trimmed) return null;
 
   // Single-token / full-URL input: parse the whole string so IDNA (e.g. Cyrillic)
