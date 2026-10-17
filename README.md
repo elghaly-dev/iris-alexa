@@ -131,7 +131,7 @@ npx mcp-inspector --cli http://127.0.0.1:3000/mcp --transport http --method tool
 
 ```bash
 npx mcp-inspector --cli http://127.0.0.1:3000/mcp --transport http \
-  --method tools/call --tool-name check_link --tool-arg url=phanton.app
+  --method tools/call --tool-name check_link --tool-arg url=phantom.com.attacker.example
 ```
 
 ## What we built during the hackathon window (Aug 31 – Oct 23)
