@@ -122,6 +122,17 @@ describe("header helpers", () => {
     assert.equal(isOriginAllowed("null", allowed), false);
   });
 
+  it("trusts this server's own origin but not other apps on shared hosting", () => {
+    const allowed = ["localhost", "127.0.0.1", "[::1]"];
+    // The /sim page on a deployment calls /mcp on the same host.
+    assert.equal(isOriginAllowed("https://iris-abc.a.run.app", allowed, "iris-abc.a.run.app"), true);
+    assert.equal(isOriginAllowed("https://iris.onrender.com", allowed, "iris.onrender.com"), true);
+    // A page on another app on the same hosting is not this server.
+    assert.equal(isOriginAllowed("https://evil.onrender.com", allowed, "iris.onrender.com"), false);
+    assert.equal(isOriginAllowed("https://evil-xyz.a.run.app", allowed, "iris-abc.a.run.app"), false);
+    assert.equal(isOriginAllowed("https://evil.onrender.com", allowed, undefined), false);
+  });
+
   it("requires both media types in Accept", () => {
     assert.equal(acceptsMcp("application/json, text/event-stream"), true);
     assert.equal(acceptsMcp("*/*"), true);

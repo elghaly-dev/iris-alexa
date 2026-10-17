@@ -83,20 +83,21 @@ export function isHostAllowed(hostHeader: string | undefined, allowed: string[])
   );
 }
 
-/** No Origin passes (non-browser clients). A present Origin must name an allowed host. */
-export function isOriginAllowed(originHeader: string | undefined, allowed: string[]): boolean {
+/**
+ * No Origin passes (non-browser clients). A present Origin must name an allowed host, or be
+ * this server's own host (the /sim page calling /mcp on the same deployment). Shared hosting
+ * suffixes such as .run.app or .onrender.com are not trusted here: anyone can serve a page
+ * from them, and a page on another app there must not be able to drive this server.
+ */
+export function isOriginAllowed(originHeader: string | undefined, allowed: string[], hostHeader?: string): boolean {
   if (originHeader === undefined) return true;
   if (originHeader.trim().toLowerCase() === "null") return false;
   const host = originHostnameOf(originHeader);
   if (host === null) return false;
   const bracketed = host.includes(":") ? `[${host}]` : host;
-  return (
-    allowed.includes(host) ||
-    allowed.includes(bracketed) ||
-    allowed.includes("*") ||
-    host.endsWith(".run.app") ||
-    host.endsWith(".onrender.com")
-  );
+  if (allowed.includes(host) || allowed.includes(bracketed) || allowed.includes("*")) return true;
+  const self = hostnameOf(hostHeader);
+  return self !== null && (self === host || self === bracketed);
 }
 
 export function acceptsMcp(accept: string | undefined): boolean {
@@ -204,7 +205,7 @@ export function createMcpRequestHandler(allowed: string[]): McpRequestGuard {
   });
 
   return async (req, res) => {
-    if (!isHostAllowed(req.headers.host, allowed) || !isOriginAllowed(req.headers.origin, allowed)) {
+    if (!isHostAllowed(req.headers.host, allowed) || !isOriginAllowed(req.headers.origin, allowed, req.headers.host)) {
       sendError(res, 403, CLIENT_TEXT.forbidden);
       return;
     }
