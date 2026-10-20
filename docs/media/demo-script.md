@@ -57,7 +57,7 @@ Its rules are locked on the server. It never accepts seed phrases, private keys 
 
 How it works: plain HTML and JavaScript under a strict content security policy. The only outbound calls are public chain RPCs. It opens offline, in six languages.
 
-## 12. Open source · github.com/Alarm2024/iris-35  (2:32–2:44)
+## 12. Open source · github.com/elghaly-dev/iris-35  (2:32–2:44)
 *On screen:* desk slide with real screenshot github-decoder.png
 
 It is open source at github dot com slash Alarm2024 slash iris-35, with fifty-four tests on six real Solana mainnet fixtures, and exact BigInt balance math.
