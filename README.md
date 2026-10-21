@@ -17,7 +17,7 @@ The server stores nothing. It does not log tool arguments. It holds no private k
 
 | Tool | Input | Result |
 | --- | --- | --- |
-| `explain_transaction` | Public Solana `signature` | Programs, findings, and balance lines from `sol-decode.js` (copied from our page [Alarm2024/iris-35](https://github.com/Alarm2024/iris-35)). One `getTransaction` call to the public RPC. |
+| `explain_transaction` | Public Solana `signature` | Programs, findings, and balance lines from `sol-decode.js` (copied from our page [elghaly-dev/iris-35](https://github.com/elghaly-dev/iris-35)). One `getTransaction` call to the public RPC. |
 | `check_scam` | A `situation`: what the person said, or the message they received | Fixed rules for nine patterns: seed-phrase request, fake support DM, fake airdrop, doubling giveaway, unlimited approval, authority change (SetAuthority, System Assign), urgent "verify wallet" link, validate/sync-or-be-deactivated, QR code to scan with the wallet. Returns `verdict`, `reason`, `why`, and `next_steps`. |
 | `check_link` | A `url` or domain | Official domain, lookalike domain, punycode host, lure words in the host, or a short link it cannot see through. Never opens the link. |
 | `safety_tip` | Optional `topic` | One short reminder written to be spoken aloud. Topics: `general`, `seed_phrase`, `links`, `approvals`, `support`, `qr_codes`. |
