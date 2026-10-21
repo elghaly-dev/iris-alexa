@@ -33,6 +33,9 @@ describe("privacy and terms pages", () => {
       assert.match(r.type, /^text\/html/);
       assert.match(r.body, /<title>[^<]+— Iris for Alexa\+<\/title>/);
       assert.match(r.body, /support@elghaly\.dev/);
+      assert.match(r.body, /Email first:/);
+      assert.match(r.body, /Calls[\s\S]{0,24}by appointment/);
+      assert.match(r.body, /Effective date:/);
       assert.match(r.body, /elghaly/);
     });
   }
