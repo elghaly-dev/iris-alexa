@@ -22,10 +22,14 @@ export const NOT_A_CLEARANCE = "This is not a clearance.";
 
 const SECRET =
   "(?:\\d+\\s*-?\\s*words?\\s+(?:seed\\s+|recovery\\s+)?phrase|seed\\s*phrase|seedphrase|recovery\\s*(?:phrase|words)|mnemonic|secret\\s*(?:phrase|words|recovery\\s*phrase)|backup\\s*phrase|private\\s*key)";
+const ASK_VERB_WHOLE =
+  "\\b(?:asked|asks|asking|want|wanted|wants|requested|requesting|need|needed|needs)\\b(?:\\s+(?:me|us))?\\s+(?:for\\s+)?";
 const ASK_VERB =
-  "(?:reply\\s+with|enter|confirm|send|share|type|provide|paste|submit|give|input|upload|verify|fill\\s+in|drop|post|(?:asked|asks?)(?:\\s+(?:me|us))?\\s+for|requested(?:\\s+(?:me|us))?(?:\\s+for)?|wants?|needs?)";
+  "(?:reply\\s+with|enter|confirm|send|share|type|provide|paste|submit|give|input|upload|verify|fill\\s+in|drop|post|" +
+  ASK_VERB_WHOLE +
+  ")";
 const SEED_ASK = new RegExp(
-  `${ASK_VERB}\\s+(?:(?:me|us)\\s+)?(?:(?:your|the|my|a|an)\\s+)?(?:\\w+\\s+){0,2}?${SECRET}`,
+  `${ASK_VERB}\\s*(?:(?:me|us)\\s+)?(?:(?:your|the|my|a|an)\\s+)?(?:\\w+\\s+){0,2}?${SECRET}`,
   "gi",
 );
 const SEED_QUESTION = new RegExp(`what\\s+(?:is|are|was)\\s+(?:your|the)\\s+(?:\\w+\\s+){0,2}?${SECRET}`, "i");

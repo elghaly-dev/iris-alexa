@@ -4,6 +4,7 @@ import { evaluateLink } from "../src/evaluate.js";
 import {
   brandInHost,
   checkLink,
+  expandWordDot,
   extractHost,
   isOfficialHost,
   misspelledBrand,
@@ -170,6 +171,18 @@ describe("check_link rules", () => {
   it("pulls the host out of a sentence", () => {
     assert.equal(extractHost("she sent me https://solflare-airdrop.com/claim?x=1 and said hurry"), "solflare-airdrop.com");
     assert.equal(extractHost("no link here"), null);
+  });
+
+  it("expands typed word dot word before host checks", () => {
+    assert.equal(normalizeHost("phantom-app dot support"), "phantom-app.support");
+    const result = checkLink("is phantom-app dot support safe");
+    assert.equal(result.verdict, "scam");
+    assert.equal(result.host, "phantom-app.support");
+  });
+
+  it("does not expand dot when it is not between word tokens", () => {
+    assert.equal(expandWordDot("plain dot"), "plain dot");
+    assert.equal(normalizeHost("plain dot"), null);
   });
 
   it("answers no_url without a domain", () => {
